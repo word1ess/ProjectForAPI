@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Chat</title>
+</head>
+
+<body>
+	<div class="flex flex-col items-center">
+		<h1>WebSocket Chat + Notifications of CRUD operations</h1>
+		<div>
+			<p>Это чисто формальность для демонстрации работы API. Для того чтобы обойти "логин" и войти под любым именем достаточно в начале ввести знак `~` Тильда. Пример: ~Фёдор</p>
+			<p>Введите имя пользователя, под которым хотите подключиться к чату с уведомлениями на WebSocket.</p>
+			<p>Если пользователь не зарегистрирован, то перейдите в Swagger UI документацию и воспользуйтесь методом 'Create User' <a href="http://localhost:8000/docs#/Users/create_user_api_v1_users__post" target="_blank" rel="noopener noreferrer">ТЫК</a> </p>
+			<h2>Your NAME: <span id="ws-name"></span></h2>
+			<form id="loginForm" onsubmit="login(event)">
+				<label for="loginName">Name:</label>
+				<input type="text" id="loginName" autocomplete="off" required />
+				<button type="submit">Login</button>
+			</form>
+		</div>
+		<div>
+			<form id="messageForm" onsubmit="sendMessage(event)" style="margin-top: 10px;">
+				<input class="bg-green-300" type="text" id="messageText" autocomplete="off" />
+				<button type="submit">Send</button>
+			</form>
+		</div>
+		<ul id='messages'> </ul>
+	</div>
+	<script>
+	function appendMessage(msg) {
+		let messages = document.getElementById('messages')
+		let message = document.createElement('li')
+		let content = document.createTextNode(msg)
+		message.appendChild(content)
+		messages.appendChild(message)
+	}
+
+	function login(event) {
+		event.preventDefault();
+		let loginNameInput = document.getElementById("loginName");
+		let loginName = loginNameInput.value.trim();
+		if(loginName.startsWith("~")) {
+			// If loginName starts with ~, perform the tasks without API request
+			if(ws instanceof WebSocket) {
+				ws.close();
+				ws = undefined;
+			}
+			let client_name = loginName.substring(1); // Remove the ~ from loginName
+			document.querySelector("#ws-name").textContent = client_name;
+			connect(client_name);
+		} else {
+			let loginData = {
+				"name": loginName
+			};
+			// Perform the login using your API endpoint (GET request in this case)
+			fetch(`{{ http_protocol }}://{{ server_urn }}/api/v1/users/login/`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(loginData),
+			}).then(response => {
+				if(response.ok) {
+					if(ws instanceof WebSocket) {
+						ws.close();
+						ws = undefined;
+					}
+					return response.json();
+				} else {
+					throw new Error('Failed to login');
+				}
+			}).then(data => {
+				// Handle the response, e.g., set user Name and update UI
+				let client_name = data.name;
+				document.querySelector("#ws-name").textContent = client_name;
+				connect(client_name);
+			}).catch(error => console.error('Error during login:', error));
+		}
+	}
+	let ws = undefined;
+
+	function connect(client_name) {
+		console.log(client_name)
+		ws = new WebSocket(`{{ ws_protocol }}://{{server_urn}}/ws/${client_name}`);
+		ws.onmessage = function(e) {
+			console.log('Message:', e.data);
+			appendMessage(e.data)
+		}
+		ws.onclose = function(e) {
+			console.log('Socket is closed. Please reconnect.', e.reason);
+			appendMessage('Socket is closed. Please reconnect.')
+		};
+		ws.onerror = function(err) {
+			console.error('Socket encountered error: ', err.message, 'Closing socket');
+			ws.close();
+		};
+	}
+
+	function sendMessage(event) {
+		let input = document.getElementById("messageText");
+		ws.send(input.value);
+		input.value = '';
+		event.preventDefault();
+	}
+	</script>
+</body>
+
+</html>
