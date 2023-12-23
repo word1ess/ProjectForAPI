@@ -11,7 +11,7 @@
 		<div>
 			<p>Это чисто формальность для демонстрации работы API. Для того чтобы обойти "логин" и войти под любым именем достаточно в начале ввести знак `~` Тильда. Пример: ~Фёдор</p>
 			<p>Введите имя пользователя, под которым хотите подключиться к чату с уведомлениями на WebSocket.</p>
-			<p>Если пользователь не зарегистрирован, то перейдите в Swagger UI документацию и воспользуйтесь методом 'Create User' <a href="http://localhost:8000/docs#/Users/create_user_api_v1_users__post" target="_blank" rel="noopener noreferrer">ТЫК</a> </p>
+			<p>Если пользователь не зарегистрирован, то перейдите в Swagger UI документацию и воспользуйтесь методом 'Create User' <a href="{{ http_protocol }}://{{ server_urn }}/docs#/Users/create_user_api_v1_users__post" target="_blank" rel="noopener noreferrer">ТЫК</a> </p>
 			<h2>Your NAME: <span id="ws-name"></span></h2>
 			<form id="loginForm" onsubmit="login(event)">
 				<label for="loginName">Name:</label>
